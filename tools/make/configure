@@ -1,0 +1,20 @@
+#!/bin/bash
+set -e
+
+function echo_usage {
+	echo "usage: configure <package> <revision> [options]"
+	echo "	-b <branch-rev>"
+	echo "	-a <arch>"
+}
+
+# to build a package you need ...
+# <package>.co: checkout commands
+# <package>.cp: copy step
+# <package>.cpp (optional): commands to setup the C++ compile environment
+
+if [ $# -lt 2 ]
+then
+	echo_usage
+	exit 1
+fi
+
