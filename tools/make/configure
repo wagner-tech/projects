@@ -18,3 +18,84 @@ then
 	exit 1
 fi
 
+paket=$1
+build=$2
+ARCH=""
+cpp_build=0
+
+# checkout build utilities
+if [ ! -d projects ]; then
+	git clone https://github.com/wagner-tech/projects/
+fi
+ln -sf projects/tools/make/makefile .
+
+# check standard files
+if [ ! -x $paket.co ]
+then
+	echo "file $paket.co missing or not executable."
+	exit 1
+fi
+if [ ! -x $paket.cp ]
+then
+	echo "file $paket.cp missing or not executable."
+	exit 1
+fi
+
+# load util functions for C/C++ - build
+if [ -f $paket.cpp ]
+then
+	cpp_build=1
+	. Make/c_configure.sh
+fi
+
+# clean src tree and check out
+#if [ -e src ]
+#then
+#	rm -rf src
+#fi
+if [ -e $paket ]
+then
+	rm -rf $paket
+fi
+rm *.stamp || true
+
+#mkdir -p src
+cwd=$(pwd)
+
+# checkout
+#pushd src
+#../$paket.co $build
+#popd
+
+# copy package control
+control=$(find src -name $paket.control)
+if [ -z "$control" ]
+then
+	echo "control file not found"
+	exit 1
+fi
+sed "s/%BUILD%/$build/" $control >$paket.control
+echo "$paket.control written."
+
+# check for postinst
+postinst=$(find src -name $paket.postinst)
+if [ -n "$postinst" ]
+then
+	ln -sf $postinst .
+fi
+
+# extract version
+version=$(grep Version $paket.control |sed "s/Version: //")
+
+# create generic make.pre, if not existing
+if [ ! -f make.pre ]
+then
+	cat  >>make.pre <<MAKE_PRE
+# mBuild make.pre script (auto generated)
+project = $paket
+version = $version
+COPY = ./$paket.cp
+MAKE_PRE
+	echo "make.pre written."
+fi
+
