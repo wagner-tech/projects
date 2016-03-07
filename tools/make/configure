@@ -49,23 +49,23 @@ then
 fi
 
 # clean src tree and check out
-#if [ -e src ]
-#then
-#	rm -rf src
-#fi
+if [ -e src ]
+then
+	rm -rf src
+fi
 if [ -e $paket ]
 then
 	rm -rf $paket
 fi
 rm *.stamp || true
 
-#mkdir -p src
+mkdir -p src
 cwd=$(pwd)
 
 # checkout
-#pushd src
-#../$paket.co $build
-#popd
+pushd src
+../$paket.co $build
+popd
 
 # copy package control
 control=$(find src -name $paket.control)
