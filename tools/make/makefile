@@ -12,6 +12,7 @@ DEB = fakeroot dpkg-deb --build $(project)
 project = default
 SOURCES =
 COPY_PRE =
+TEX = pdflatex
 
 # Load project specification
 include make.pre
@@ -74,3 +75,10 @@ clean:
 	if [ -e $(project).zip ]; then rm $(project).zip; fi
 	if [ -e $(project) ]; then rm -rf $(project); fi
 
+#-----------------------------------------------------------------
+# generische Regeln
+#-----------------------------------------------------------------
+%.pdf:%.tex
+	$(TEX) $<
+
+-include make.post

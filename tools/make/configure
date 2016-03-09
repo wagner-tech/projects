@@ -9,7 +9,7 @@ function echo_usage {
 
 # to build a package you need ...
 # <package>.co: checkout commands
-# <package>.cp: copy step
+# <package>.cp (optional): copy step for package production
 # <package>.cpp (optional): commands to setup the C++ compile environment
 
 if [ $# -lt 2 ]
@@ -37,8 +37,8 @@ then
 fi
 if [ ! -x $paket.cp ]
 then
-	echo "file $paket.cp missing or not executable."
-	exit 1
+	echo "warning: file $paket.cp missing or not executable:"
+	echo "  this file is necessary for any package production."
 fi
 
 # load util functions for C/C++ - build
@@ -48,11 +48,7 @@ then
 	. Make/c_configure.sh
 fi
 
-# clean src tree and check out
-if [ -e src ]
-then
-	rm -rf src
-fi
+# clean dirs and check out
 if [ -e $paket ]
 then
 	rm -rf $paket
@@ -63,19 +59,23 @@ mkdir -p src
 cwd=$(pwd)
 
 # checkout
-pushd src
-../$paket.co $build
-popd
+pushd src >/dev/null
+	../$paket.co $build
+popd >/dev/null
 
 # copy package control
 control=$(find src -name $paket.control)
 if [ -z "$control" ]
 then
-	echo "control file not found"
-	exit 1
+	echo "warning: control file not found"
+	echo "  this file is necessary for any package production."
+else	
+	sed "s/%BUILD%/$build/" $control >$paket.control
+	echo "$paket.control written."
+
+	# extract version
+	version=$(grep Version $paket.control |sed "s/Version: //")
 fi
-sed "s/%BUILD%/$build/" $control >$paket.control
-echo "$paket.control written."
 
 # check for postinst
 postinst=$(find src -name $paket.postinst)
@@ -83,9 +83,6 @@ if [ -n "$postinst" ]
 then
 	ln -sf $postinst .
 fi
-
-# extract version
-version=$(grep Version $paket.control |sed "s/Version: //")
 
 # create generic make.pre, if not existing
 if [ ! -f make.pre ]
