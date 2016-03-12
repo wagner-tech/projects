@@ -10,7 +10,7 @@ function echo_usage {
 # to build a package you need ...
 # <package>.co: checkout commands
 # <package>.cp (optional): copy step for package production
-# <package>.cpp (optional): commands to setup the C++ compile environment
+# <package>.cpp.sh (optional): commands to setup the C++ compile environment
 
 if [ $# -lt 2 ]
 then
@@ -41,19 +41,13 @@ then
 	echo "  this file is necessary for any package production."
 fi
 
-# load util functions for C/C++ - build
-if [ -f $paket.cpp ]
-then
-	cpp_build=1
-	. Make/c_configure.sh
-fi
-
 # clean dirs and check out
 if [ -e $paket ]
 then
 	rm -rf $paket
 fi
 rm *.stamp || true
+rm make.pre || true
 
 mkdir -p src
 cwd=$(pwd)
@@ -63,6 +57,14 @@ pushd src >/dev/null
 	../$paket.co $build
 popd >/dev/null
 
+# load util functions for C/C++ - build
+if [ -f $paket.cpp.sh ]
+then
+	cpp_build=1
+	. projects/tools/make/c_configure.sh
+	. $paket.cpp.sh
+fi
+
 # copy package control
 control=$(find src -name $paket.control)
 if [ -z "$control" ]
@@ -70,12 +72,13 @@ then
 	echo "warning: control file not found"
 	echo "  this file is necessary for any package production."
 else	
-	sed "s/%BUILD%/$build/" $control >$paket.control
+	sed "s/%BUILD%/$build/" $control |sed "s/%ARCH%/$ARCH/" >$paket.control
 	echo "$paket.control written."
 
 	# extract version
 	version=$(grep Version $paket.control |sed "s/Version: //")
 fi
+
 
 # check for postinst
 postinst=$(find src -name $paket.postinst)
@@ -90,9 +93,11 @@ then
 	cat  >>make.pre <<MAKE_PRE
 # mBuild make.pre script (auto generated)
 project = $paket
-version = $version
 COPY = ./$paket.cp
 MAKE_PRE
 	echo "make.pre written."
 fi
+
+# append version to make.pre
+echo "version = $version" >> make.pre
 
