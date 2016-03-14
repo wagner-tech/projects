@@ -35,13 +35,18 @@ then
 	echo "file $paket.co missing or not executable."
 	exit 1
 fi
-if [ ! -x $paket.cp ]
-then
-	echo "warning: file $paket.cp missing or not executable:"
-	echo "  this file is necessary for any package production."
-fi
 
 # clean dirs and check out
+if [ -d src ]
+then
+	echo "Shall I delete src dir? [y]/n"
+	read key
+	if [ "$key" != "n" ]
+	then
+		rm -rf src
+	fi
+fi
+
 if [ -e $paket ]
 then
 	rm -rf $paket
@@ -79,6 +84,15 @@ else
 	version=$(grep Version $paket.control |sed "s/Version: //")
 fi
 
+# check for copy file
+copy=$(find src -name $paket.cp)
+if [ -n "$copy" ]
+then
+	ln -sf $copy .
+else
+	echo "warning: file $paket.cp missing or not executable:"
+	echo "  this file is necessary for any package production."
+fi
 
 # check for postinst
 postinst=$(find src -name $paket.postinst)
