@@ -74,3 +74,9 @@ clean:
 	if [ -e $(project).zip ]; then rm $(project).zip; fi
 	if [ -e $(project) ]; then rm -rf $(project); fi
 
+#-----------------------------------------------------------------
+# Build-Regeln
+#-----------------------------------------------------------------
+%.pdf : %.tex
+	pdflatex $<
+
