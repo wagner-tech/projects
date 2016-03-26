@@ -28,7 +28,7 @@ include make.pre
 #
 #-----------------------------------------------------------------
 
-compile: compile.stamp
+compile: $(COMPILE_TARGET)
 	# compile ist fertig
 
 zip: $(project).zip
@@ -40,7 +40,6 @@ deb: $(project).deb
 #-----------------------------------------------------------------
 # compile steps
 #-----------------------------------------------------------------
-
 compile.stamp: $(SOURCES)
 	$(COMPILE)
 	@touch compile.stamp
@@ -77,6 +76,6 @@ clean:
 #-----------------------------------------------------------------
 # Build-Regeln
 #-----------------------------------------------------------------
-%.pdf : %.tex
+%.pdf : %.tex $(SOURCES)
 	pdflatex $<
 
