@@ -4,6 +4,7 @@
 
 NOP = @echo "No operation for target $@"
 COMPILE = $(NOP)
+COMPILE_TARGET = compile.stamp
 COPY = $(NOP)
 ZIP = zip -r $(project).zip $(project)
 DEB = fakeroot dpkg-deb --build $(project)
