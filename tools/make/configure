@@ -23,6 +23,19 @@ build=$2
 ARCH=""
 cpp_build=0
 
+shift 2
+while getopts "b:a:" opt
+do
+	case $opt in
+	a) ARCH=$OPTARG
+		;;
+	b) echo "branching not implemented"
+		;;
+	*) exit 1
+		;;
+	esac
+done
+
 # checkout build utilities
 if [ ! -d projects ]; then
 	git clone https://github.com/wagner-tech/projects/

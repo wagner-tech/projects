@@ -31,7 +31,7 @@ function install_cpp_make {
 		echo "CXXFLAGS += -D_ARMEL" >> make.pre
 		echo 'export PATH := /opt/eldk-5.0/armv5te/sysroots/i686-oesdk-linux/usr/bin/armv5te-linux-gnueabi/:/opt/eldk-5.0/armv5te/sysroots/i686-oesdk-linux/bin/armv5te-linux-gnueabi/:$(PATH)' >> make.pre
 	fi
-	echo "CXXFLAGS += -std=c++0x -I$src/util" >> make.pre
+	echo "CXXFLAGS += -I$src/util" >> make.pre
 	popd
 }
 
