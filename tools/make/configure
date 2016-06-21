@@ -127,4 +127,5 @@ fi
 
 # append version to make.pre
 echo "version = $version" >> make.pre
+echo "build = $build" >> make.pre
 
