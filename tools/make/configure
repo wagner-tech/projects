@@ -5,6 +5,8 @@ function echo_usage {
 	echo "usage: configure <package> <revision> [options]"
 	echo "	-b <branch-rev>"
 	echo "	-a <arch>"
+	echo "	-g <alternative repository>"
+	echo "	-n : do not delete src dir"
 }
 
 # to build a package you need ...
@@ -20,26 +22,33 @@ fi
 
 paket=$1
 build=$2
+shift 2
 ARCH=""
 cpp_build=0
+alt_repos=""
+delete_src=1
 
-shift 2
-while getopts "b:a:" opt
-do
+while getopts ":a:b:g:n" opt; do
 	case $opt in
-	a) ARCH=$OPTARG
-		;;
-	b) echo "branching not implemented"
-		;;
-	*) exit 1
-		;;
+		a) ARCH=$OPTARG
+			;;
+		b) branch=$OPTARG
+			;;
+		g) alt_repos="-g $OPTARG"
+			;;
+		n) delete_src=0
+			;;
+		\?) echo "Invalid option: -$OPTARG"
+			echo_usage
+			exit 1
+			;;
+		:) echo "Option -$OPTARG requires an argument."
+			echo_usage
+			exit 1
+			;;
 	esac
 done
 
-# checkout build utilities
-if [ ! -d projects ]; then
-	git clone https://github.com/wagner-tech/projects/
-fi
 ln -sf projects/tools/make/makefile .
 
 # check standard files
@@ -50,14 +59,9 @@ then
 fi
 
 # clean dirs and check out
-if [ -d src ]
+if [ -d src -a $delete_src -eq 1 ]
 then
-	echo "Shall I delete src dir? [y]/n"
-	read key
-	if [ "$key" != "n" ]
-	then
-		rm -rf src
-	fi
+	rm -rf src
 fi
 
 if [ -e $paket ]
@@ -72,7 +76,7 @@ cwd=$(pwd)
 
 # checkout
 pushd src >/dev/null
-	../$paket.co $build
+	../$paket.co $alt_repos $build 
 popd >/dev/null
 
 # load util functions for C/C++ - build
@@ -127,4 +131,5 @@ fi
 
 # append version to make.pre
 echo "version = $version" >> make.pre
+echo "build = $build" >> make.pre
 
