@@ -33,11 +33,11 @@ function install_cpp_make {
 	else
 		echo "CXXFLAGS += -std=c++0x" >> make.pre
 	fi
-	echo "CXXFLAGS += -I$src/util" >> make.pre
 	popd
 }
 
 function append_dependency {
+# adds another drectory, where a c++ compile is performed
 # parameter:
 # $1: main directory
 # $2: dependency directory
@@ -51,6 +51,7 @@ function append_dependency {
 }
 
 function append_library {
+# same as append_dependency. In addition a include statement + a link to the library is added to "main directory"
 # parameter:
 # $1: main directory
 # $2: dependency directory
@@ -59,6 +60,7 @@ function append_library {
 	src=$(pwd)
 	echo "DEPS += $3" >> $1/make.pre
 	echo "LDLIBS += $3" >> $1/make.pre
+	echo "CXXFLAGS += -I$src/$2" >> $1/make.pre
 	echo "$3:" >> $1/make.post
 	echo "	cd $src/$2 && make TARGET=$3" >> $1/make.post
 	echo "	ln -sf $src/$2/$3 ." >> $1/make.post
