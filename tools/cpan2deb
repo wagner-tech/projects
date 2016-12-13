@@ -1,0 +1,78 @@
+#!/bin/bash
+set -e
+
+usage="cpan2deb <module>"
+
+if [ $# -ne 1 ]; then
+	echo $usage
+	exit 1
+fi
+
+cd $HOME
+if [ -d locallib ]; then
+	rm -rf locallib
+fi
+if [ -d build ]; then
+	rm -rf build
+fi
+
+cpan -m $1 1>cpan.out 2>&1 || (echo "cpan failed"; exit 1)
+builddir=$(ls -rt ~/.cpan/build |tail -1)
+cd ~/.cpan/build/$builddir
+perl Makefile.PL PREFIX="~/locallib"
+make
+make install 1>~/cpan.out 2>&1
+echo "Module $1 installed to ~/locallib, output written to cpan.out"
+cd
+
+mkdir build
+
+# build copy file
+#grep "^Installing" cpan.out |sed "s/Installing //" >build/cpan.tmp
+
+cd build
+
+# edit copy file
+#awk '{FS="/";} \
+#/lib/ {print $0" $1/usr/share/perl5";} \
+#/man/ {print $0" $1/usr/share/man";}' cpan.tmp >cpan.cp
+
+# build package name
+version=$(perl -M$1 -e 'print $ARGV[0]->VERSION' $1)
+mname=$1
+name=lib${mname/::/-}-perl
+name=${name,,*}
+
+mkdir -p $name/DEBIAN
+cat << EOF >$name/DEBIAN/control
+Package: $name
+Version: $version
+Section: base
+Priority: optional
+Architecture: all
+Depends:
+Maintainer: WagnerTech UG <mail@wagnertech.de>
+Description: $1 perl modul
+EOF
+
+# execute copy script
+#mkdir -p $name/usr/share/perl5
+#mkdir -p $name/usr/share/man
+#. cpan.cp $name 
+
+# move locallib content
+mkdir -p $name/usr/local/
+
+for dir in $(ls ~/locallib); do
+	case $dir in
+	lib) ;;
+	share) mv ~/locallib/share $name/usr/local/
+	;;
+	man) mv ~/locallib/man $name/usr/
+	;;
+	esac
+done
+
+fakeroot dpkg-deb --build $name
+cp $name.deb ${name}_$version.deb
+echo "${name}_$version.deb erstellt."
