@@ -8,6 +8,7 @@ COMPILE_TARGET = compile.stamp
 COPY = $(NOP)
 ZIP = zip -r $(project).zip $(project)
 DEB = fakeroot dpkg-deb --build $(project)
+INSERT_BUILD = projects/tools/make/insert_build.sh
 
 #default parameters
 project = default
@@ -37,6 +38,9 @@ zip: $(project).zip
 
 deb: $(project).deb
 	# Debian package ready
+
+version: $(COMPILE_TARGET)
+	$(INSERT_BUILD) $(COMPILE_TARGET) $(build)
 
 #-----------------------------------------------------------------
 # compile steps
@@ -78,5 +82,5 @@ clean:
 # Build-Regeln
 #-----------------------------------------------------------------
 %.pdf : %.tex $(SOURCES)
-	pdflatex $<
+	pdflatex $< && pdflatex $<
 
