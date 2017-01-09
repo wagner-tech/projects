@@ -16,32 +16,28 @@ if [ -d build ]; then
 	rm -rf build
 fi
 
+echo "call CPAN ..."
 cpan -m $1 1>cpan.out 2>&1 || (echo "cpan failed"; exit 1)
-builddir=$(ls -rt ~/.cpan/build |tail -1)
-cd ~/.cpan/build/$builddir
-perl Makefile.PL PREFIX="~/locallib"
+
+# find build directory
+mname=$1
+name=lib${mname/::/-}-perl
+name=${name,,*}
+#builddir_prefix=${mname/::/-}
+builddir=$(ls -rtd ~/.cpan/build/*/ |tail -1)
+
+cd $builddir
+perl Makefile.PL INSTALL_BASE="~/locallib"
 make
 make install 1>~/cpan.out 2>&1
 echo "Module $1 installed to ~/locallib, output written to cpan.out"
 cd
 
+# check version
+version=$(perl -M$mname -e 'print $ARGV[0]->VERSION' $mname)
+
 mkdir build
-
-# build copy file
-#grep "^Installing" cpan.out |sed "s/Installing //" >build/cpan.tmp
-
 cd build
-
-# edit copy file
-#awk '{FS="/";} \
-#/lib/ {print $0" $1/usr/share/perl5";} \
-#/man/ {print $0" $1/usr/share/man";}' cpan.tmp >cpan.cp
-
-# build package name
-version=$(perl -M$1 -e 'print $ARGV[0]->VERSION' $1)
-mname=$1
-name=lib${mname/::/-}-perl
-name=${name,,*}
 
 mkdir -p $name/DEBIAN
 cat << EOF >$name/DEBIAN/control
