@@ -1,6 +1,28 @@
 #!/bin/bash
 set -e
 
+function process_lib {
+	pushd ~/locallib 1>/dev/null
+		if [ $(ls lib/p*/ |wc -w) -eq 1 ]
+		then
+			# seems to be arichtecturalsub dir
+			arch_dir=$(ls lib/p*/)
+			cd lib/p*/
+			mv $arch_dir/* .
+			rmdir $arch_dir
+			cd ../..
+		fi
+		
+		# check, if there is a real archtecturel depandence
+		shared_lib=$(find . -name "*.so")
+		if [ -n "$shared_lib" ]
+		then
+			arch=$(arch)
+		fi			
+	popd 1>/dev/null
+	mv ~/locallib/lib $name/usr/
+}
+
 usage="cpan2deb <module>"
 
 if [ $# -ne 1 ]; then
@@ -8,36 +30,62 @@ if [ $# -ne 1 ]; then
 	exit 1
 fi
 
-cd $HOME
+#cd $HOME
 if [ -d locallib ]; then
 	rm -rf locallib
 fi
-if [ -d build ]; then
-	rm -rf build
-fi
+#if [ -d build ]; then
+#	rm -rf build
+#fi
+
+start_dir=$(pwd)
 
 echo "call CPAN ..."
-cpan -m $1 1>cpan.out 2>&1 || (echo "cpan failed"; exit 1)
+cpan -m $1 1>$start_dir/cpan.out 2>&1 || (echo "cpan failed"; exit 1)
 
 # find build directory
 mname=$1
 name=lib${mname/::/-}-perl
 name=${name,,*}
-#builddir_prefix=${mname/::/-}
 builddir=$(ls -rtd ~/.cpan/build/*/ |tail -1)
 
-cd $builddir
-perl Makefile.PL INSTALL_BASE="~/locallib"
-make
-make install 1>~/cpan.out 2>&1
-echo "Module $1 installed to ~/locallib, output written to cpan.out"
-cd
+pushd $builddir 1>/dev/null
+	perl Makefile.PL INSTALL_BASE="~/locallib"
+	make
+	make install 1>>~/cpan.out 2>&1
+	echo "Module $1 installed to ~/locallib, output written to $start_dir/cpan.out"
+popd 1>/dev/null
+
+arch=all
+
+# move locallib content
+mkdir -p $name/usr/
+
+for dir in $(ls ~/locallib); do
+	case $dir in
+	lib) process_lib
+	;;
+	share) mv ~/locallib/share $name/usr/
+	;;
+	man) mv ~/locallib/man $name/usr/
+	;;
+	esac
+done
 
 # check version
+export PERL5LIB="$start_dir/$name/usr/lib/perl5:$PERL5LIB"
 version=$(perl -M$mname -e 'print $ARGV[0]->VERSION' $mname)
 
-mkdir build
-cd build
+arch_name=""
+if [ "$arch" != "all" ]
+then
+	arch_name="_$arch"
+	if [ "$arch" = "i686" ]
+	then
+		# i686-Paketarchitektur gibt es nicht
+		arch="i386"
+	fi
+fi
 
 mkdir -p $name/DEBIAN
 cat << EOF >$name/DEBIAN/control
@@ -45,30 +93,13 @@ Package: $name
 Version: $version
 Section: base
 Priority: optional
-Architecture: all
+Architecture: $arch
 Depends:
 Maintainer: WagnerTech UG <mail@wagnertech.de>
 Description: $1 perl modul
 EOF
 
-# execute copy script
-#mkdir -p $name/usr/share/perl5
-#mkdir -p $name/usr/share/man
-#. cpan.cp $name 
-
-# move locallib content
-mkdir -p $name/usr/local/
-
-for dir in $(ls ~/locallib); do
-	case $dir in
-	lib) ;;
-	share) mv ~/locallib/share $name/usr/local/
-	;;
-	man) mv ~/locallib/man $name/usr/
-	;;
-	esac
-done
-
 fakeroot dpkg-deb --build $name
-cp $name.deb ${name}_$version.deb
-echo "${name}_$version.deb erstellt."
+cp $name.deb ${name}_$version$arch_name.deb
+echo "${name}_$version$arch_name.deb erstellt."
+
