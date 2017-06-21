@@ -60,7 +60,10 @@ copy.stamp: $(COPY_PRE)
 control.stamp: $(project).control
 	mkdir -p $(project)/DEBIAN
 	cp $(project).control $(project)/DEBIAN/control
+	if [ -f $(project).preinst ]; then cp $(project).preinst $(project)/DEBIAN/preinst; fi
 	if [ -f $(project).postinst ]; then cp $(project).postinst $(project)/DEBIAN/postinst; fi
+	if [ -f $(project).prerm ]; then cp $(project).prerm $(project)/DEBIAN/prerm; fi
+	if [ -f $(project).postrm ]; then cp $(project).postrm $(project)/DEBIAN/postrm; fi
 	@touch control.stamp
 
 $(project).zip: copy.stamp $(project)

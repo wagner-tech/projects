@@ -111,12 +111,15 @@ else
 	echo "  this file is necessary for any package production."
 fi
 
-# check for postinst
-postinst=$(find src -name $paket.postinst)
-if [ -n "$postinst" ]
-then
-	ln -sf $postinst .
-fi
+# check for installation scripts
+files=$(find src -name $paket.preinst)
+files="$files $(find src -name $paket.postinst)"
+files="$files $(find src -name $paket.prerm)"
+files="$files $(find src -name $paket.postrm)"
+for file in $files
+do
+	ln -sf $file .
+done
 
 # create generic make.pre, if not existing
 if [ ! -f make.pre ]
