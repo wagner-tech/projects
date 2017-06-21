@@ -88,13 +88,14 @@ then
 fi
 
 # copy package control
-control=$(find src -name $paket.control)
+control=$(find -L src -name $paket.control)
+build_number=${build#*_}
 if [ -z "$control" ]
 then
 	echo "warning: control file not found"
 	echo "  this file is necessary for any package production."
 else	
-	sed "s/%BUILD%/$build/" $control |sed "s/%ARCH%/$ARCH/" >$paket.control
+	sed "s/%BUILD%/$build_number/" $control |sed "s/%ARCH%/$ARCH/" >$paket.control
 	echo "$paket.control written."
 
 	# extract version
@@ -102,7 +103,7 @@ else
 fi
 
 # check for copy file
-copy=$(find src -name $paket.cp)
+copy=$(find -L src -name $paket.cp)
 if [ -n "$copy" ]
 then
 	ln -sf $copy .
