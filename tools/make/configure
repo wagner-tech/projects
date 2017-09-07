@@ -114,9 +114,9 @@ fi
 
 # check for installation scripts
 files=$(find src -name $paket.preinst)
-files="$files $(find src -name $paket.postinst)"
-files="$files $(find src -name $paket.prerm)"
-files="$files $(find src -name $paket.postrm)"
+files="$files $(find -L src -name $paket.postinst)"
+files="$files $(find -L src -name $paket.prerm)"
+files="$files $(find -L src -name $paket.postrm)"
 for file in $files
 do
 	ln -sf $file .
