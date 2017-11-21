@@ -54,7 +54,7 @@ compile.stamp: $(SOURCES)
 #-----------------------------------------------------------------
 
 copy.stamp: $(COPY_PRE)
-	$(COPY) $(project)
+	$(COPY) $(project) $(version) ${arch}
 	@touch copy.stamp
 
 control.stamp: $(project).control
