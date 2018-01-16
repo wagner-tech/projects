@@ -16,8 +16,9 @@ function install_cpp_make {
 	src=$(pwd);
 	pushd $1
 	if [ -f makefile ]; then rm makefile; fi
+	if [ -L makefile ]; then rm makefile; fi
 	if [ -f make.post ]; then rm make.post; fi
-	ln -s $cwd/Make/cpp.make makefile
+	ln -s $cwd/projects/tools/make/cpp.make makefile
 	echo "SOURCE = \\" > make.pre
 	for file in $(ls *.cpp)
 	do
@@ -48,6 +49,16 @@ function append_dependency {
 	echo "$3:" >> $1/make.post
 	echo "	cd $src/$2 && make TARGET=$3" >> $1/make.post
 	echo "" >> $1/make.post
+}
+
+function add_include {
+# adds a include directory
+# parameter:
+# $1: main directory
+# $2: include dir
+
+	src=$(pwd)
+	echo "CXXFLAGS += -I$src/$2" >> $1/make.pre
 }
 
 function append_library {
