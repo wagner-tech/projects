@@ -1,0 +1,136 @@
+#!/bin/bash
+set -e
+
+function echo_usage {
+	echo "usage: configure <package> [options]"
+	echo "	-a <arch>"
+}
+
+function set_build {
+	if [ -e .svn ]
+	then
+		build=$(svnversion)
+	elif [ -e .git ]
+	then
+		build=$(git describe --tags 2>/dev/null)
+		test -n "$build" || build="TOP"
+		changes=$(git status -s |grep "^ *M") || true
+		test -z "$changes" || build="${build}M"
+	fi
+}
+
+# to build a package you need ...
+# <package>.cp (optional): copy step for package production
+# <package>.cpp.sh (optional): commands to setup the C++ compile environment
+
+if [ $# -lt 1 ]
+then
+	echo_usage
+	exit 1
+fi
+
+paket=$1
+shift
+ARCH=""
+cpp_build=0
+delete_src=1
+
+set_build
+echo "building $paket with build $build"
+
+while getopts ":a" opt; do
+	case $opt in
+		a) ARCH=$OPTARG
+			;;
+		\?) echo "Invalid option: -$OPTARG"
+			echo_usage
+			exit 1
+			;;
+		:) echo "Option -$OPTARG requires an argument."
+			echo_usage
+			exit 1
+			;;
+	esac
+done
+
+# clean dirs and check out
+if [ -d build -a $delete_src -eq 1 ]
+then
+	rm -rf build
+fi
+
+mkdir -p build
+pushd build >/dev/null
+
+ln -sf /usr/share/mbuild/makefile .
+
+if [ -e $paket ]
+then
+	rm -rf $paket
+fi
+rm *.stamp || true
+rm make.pre || true
+
+# load util functions for C/C++ - build
+if [ -f $paket.cpp.sh ]
+then
+	cpp_build=1
+	. projects/tools/make/c_configure.sh
+	. $paket.cpp.sh
+fi
+
+# copy package control
+control=$(find -L src -name $paket.control)
+build_number=${build#*_}
+if [ -z "$control" ]
+then
+	echo "warning: control file not found"
+	echo "  this file is necessary for any package production."
+else	
+	sed "s/%BUILD%/$build_number/" $control |sed "s/%ARCH%/$ARCH/" >$paket.control
+	echo "$paket.control written."
+
+	# extract version
+	version=$(grep Version $paket.control |sed "s/Version: //")
+fi
+
+# check for copy file
+copy=$(find -L src -name $paket.cp)
+if [ -n "$copy" ]
+then
+	ln -sf $copy .
+else
+	echo "warning: file $paket.cp missing or not executable:"
+	echo "  this file is necessary for any package production."
+fi
+
+# check for installation scripts
+files=$(find src -name $paket.preinst)
+files="$files $(find -L src -name $paket.postinst)"
+files="$files $(find -L src -name $paket.prerm)"
+files="$files $(find -L src -name $paket.postrm)"
+for file in $files
+do
+	ln -sf $file .
+done
+
+# create generic make.pre, if not existing
+if [ ! -f make.pre ]
+then
+	cat  >>make.pre <<MAKE_PRE
+# mBuild make.pre script (auto generated)
+project = $paket
+COPY = ./$paket.cp
+MAKE_PRE
+	if [ -n "$ARCH" ]
+	then
+		echo "arch = $ARCH" >>make.pre
+		echo "_arch = _${ARCH}" >>make.pre
+	fi
+	echo "make.pre written."
+fi
+
+# append version to make.pre
+echo "version = $version" >> make.pre
+echo "build = $build" >> make.pre
+
