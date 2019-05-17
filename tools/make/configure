@@ -130,15 +130,15 @@ then
 project = $paket
 COPY = ./$paket.cp
 MAKE_PRE
-	if [ -n "$ARCH" ]
-	then
-		echo "arch = $ARCH" >>make.pre
-		echo "_arch = _${ARCH}" >>make.pre
-	fi
-	echo "make.pre written."
 fi
 
 # append version to make.pre
 echo "version = $version" >> make.pre
 echo "build = $build" >> make.pre
+if [ -n "$ARCH" ]
+then
+	echo "arch = $ARCH" >>make.pre
+	echo "_arch = _${ARCH}" >>make.pre
+fi
+echo "make.pre written."
 

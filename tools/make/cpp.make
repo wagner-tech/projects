@@ -19,5 +19,5 @@ clean:
 	ar r $(TARGET) *.o
 
 %.so: $(SOURCE:%.cpp=%.o) $(LDLIBS)
-	$(CXX) -shared -o $(TARGET) *.o $(LDLIBS)
+	$(CXX) $(CXXFLAGS) -shared -o $(TARGET) *.o $(LDLIBS)
 -include make.post
